@@ -89,7 +89,7 @@ fun simpleLazyColumn1() {
     {
         items(lisofContacts){
             val currentContacts=it
-            singleContactUi(currentContacts)
+            singleContactUii(currentContacts)
         }
     }
 
@@ -120,7 +120,7 @@ var searchvalue by remember { mutableStateOf("") }
 
 @Composable
 //@Preview
-fun singleContactUi(contact: com.example.week3session1contactapp.Contacts){
+fun singleContactUii(contact: com.example.week3session1contactapp.Contacts){
     Box(modifier=Modifier.fillMaxWidth()
         .background(color=Color.Black)
         .padding(8.dp)){
