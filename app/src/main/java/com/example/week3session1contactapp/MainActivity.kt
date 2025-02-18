@@ -4,12 +4,14 @@ import android.R.attr.end
 import android.R.attr.label
 import android.R.attr.text
 import android.R.attr.top
+import android.R.id.edit
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -57,15 +60,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val listOfContacts by remember {
-                mutableStateOf(mutableStateListOf<Contacts>()) }
-                var searchvalue by remember { mutableStateOf("") } // it is written here becuase now we are finding the data by typing here , if it present insode the searchbox(), then will will not be able to find anything
+                mutableStateOf(mutableStateListOf<Contacts>())
+            }
+            var searchvalue by remember { mutableStateOf("") } // it is written here becuase now we are finding the data by typing here , if it present insode the searchbox(), then will will not be able to find anything
             //by tyooing here, now we will connect this searchvalue to other datas.
-val filteredcontactlist=listOfContacts.filter {
-    it.firstname.contains(searchvalue, ignoreCase = true) //ignoreCase = true means it will not be case sensitive
-}
+            val filteredcontactlist = listOfContacts.filter {
+                it.firstname.contains(searchvalue, ignoreCase = true) //ignoreCase = true means it will not be case sensitive
+                        ||  it.lastname.contains(searchvalue, ignoreCase = true)
+                        || it.number.contains(searchvalue, ignoreCase = true)
+
+
+        }
             Column() {
                 searchbox(searchvalue,{searchvalue=it})     // {searchvalue=it} means we passing the lambda
-                contactlist(filteredcontactlist)
+                contactlist(filteredcontactlist, {listOfContacts.remove(it)}) // it is basically currentContact
 
             }
             Fabaddcontact1(listOfContacts)
@@ -106,8 +114,8 @@ onValueChange(newtypedvalue)
 }
 @Composable
 //@Preview
-fun contactlist(listOfContacts:List<Contacts>) {
-    Spacer(modifier = Modifier.padding(12.dp))
+fun contactlist(listOfContacts:List<Contacts>,onDeleteClicked:(Contacts)->Unit) { // onDeleteClicked is type of function which willl return nothing but a unit value
+    // jkSpacer(modifier = Modifier.padding(12.dp))
    // since list of contacts ko hum bahar se lenge so we added this as paremeters
     LazyColumn(
 
@@ -118,7 +126,7 @@ fun contactlist(listOfContacts:List<Contacts>) {
     ){
         items(listOfContacts){
             val currentContact=it
-            singleContactUi(currentContact)
+            singleContactUi(currentContact, {onDeleteClicked(currentContact)})
 
         }
     }
@@ -144,11 +152,14 @@ fun Fabaddcontact1(listOfContacts: MutableList<Contacts>){ // the miutableList a
     var firstnamevalue by remember { mutableStateOf("") }
     var lasttnamevalue by remember { mutableStateOf("") }
     var numbervalue by remember { mutableStateOf("") }
+    var firstnameempty by remember { mutableStateOf(false) }
+    var lastnameempty by remember { mutableStateOf(false) }
+    var numberempty by remember { mutableStateOf(false) }
 
 
     //we have to make the bottomsheeet like a textfield. so -
     val context= LocalContext.current
-    var bottomsheetopen by remember { mutableStateOf(false) } //bottumsheetopennis a variable and ModalBottomsheet is a function.
+    var bottomsheetopen by remember { mutableStateOf(false) } //bottumsheetopen is a variable and ModalBottomsheet is a function.
     Box(modifier=Modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomEnd
     ) { // now we want ki when we click the plus icon , then only the bottomsheet opens up
@@ -165,26 +176,45 @@ fun Fabaddcontact1(listOfContacts: MutableList<Contacts>){ // the miutableList a
             OutlinedTextField(value= firstnamevalue,onValueChange = {firstnamevalue=it },
                 modifier= Modifier.fillMaxWidth()
                     .padding(start=12.dp,end =12.dp,top=12.dp),
-                label = {Text(text="first name")}
+                label = {Text(text="first name")},
+               isError = firstnameempty        // okay this is use to show that somethimng is error in the edit box ,
+                // means if write somthing wrong , thgen the box turns red
             )
             OutlinedTextField(value= lasttnamevalue,onValueChange = {lasttnamevalue=it },
                 modifier= Modifier.fillMaxWidth()
                     .padding(start=12.dp,end =12.dp,top=12.dp),
-                label = {Text(text="last name")}
+                label = {Text(text="last name")},
+                isError = lastnameempty
             )
             OutlinedTextField(value= numbervalue,onValueChange = {numbervalue=it },
                 modifier= Modifier.fillMaxWidth()
                     .padding(start=12.dp,end =12.dp,top=12.dp),
-                label = {Text(text="number")}
+                label = {Text(text="number")},
+                isError = numberempty
             )
             Button(onClick = {
                 //get all the data from tyhe outlined edit field and then create contact data class and then add this contact to the the listOfContacts
-                val contact= Contacts(firstnamevalue,lasttnamevalue,numbervalue)
-                listOfContacts.add(contact)
-                firstnamevalue =""
-                lasttnamevalue=""
-                numbervalue="" // the above three lines means the previous text will eb gone after saving
-                bottomsheetopen=false // this line means the bottomsheet will disappear after saving the info
+                firstnameempty =firstnamevalue.isBlank()
+                lastnameempty = lasttnamevalue.isBlank()
+                numberempty=numbervalue.isBlank()
+
+           if(firstnameempty|| lastnameempty || numberempty){       // firstnameempty|| lastnameempty || numberempty initially these are false, if  (false){ } else (true){ they make the contact }
+
+
+                }else {     //else they make the contact
+                    val contact= Contacts(firstnamevalue,lasttnamevalue,numbervalue)
+                    listOfContacts.add(contact)
+                    firstnamevalue =""
+                    lasttnamevalue=""
+                    numbervalue="" // the above three lines means the previous text will eb gone after saving
+                    bottomsheetopen=false // this line means the bottomsheet will disappear after saving the info
+                    firstnameempty=false
+               lastnameempty=false
+               numberempty=false
+               // we again write false on above variables just to reset the valu
+                }
+
+                // this line means the bottomsheet will disappear after saving the info
             },modifier=Modifier.fillMaxWidth().padding(12.dp)) {
                 Text(text="create contact")
             }
@@ -204,12 +234,18 @@ modifier= Modifier.fillMaxWidth()
 }
 @Composable
 //@Preview
-fun singleContactUi(contact: Contacts){
+fun singleContactUi(contact: Contacts,onDeleteClicked:(Contacts) -> Unit){
     Spacer(modifier = Modifier.padding(12.dp))
     Box(modifier=Modifier
         .fillMaxWidth()
         .background(color = Color.Black)
-        .padding(8.dp)){
+        .padding(8.dp)
+        .clickable(){
+            onDeleteClicked(contact)
+
+            //delete the item.. actually we dont delete it from here , we will pass the function innsinglecontact ui , which will delete
+            // , cuz we dont have the access to the losu from here, the only access we can get is from the set content.
+        }){
 //        Image(painter=painterResource(id=R.drawable.sample),
 //            contentDescription = "profile",
 //            modifier=Modifier
